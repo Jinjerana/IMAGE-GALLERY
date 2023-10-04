@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import React from 'react';
+import { useState, useEffect } from 'react';
 import getImages from 'Services/API';
 import { SearchBar } from './SearchBar/SearchBar';
 import { ImageGallery } from './ImageGallery/ImageGallery.js';
@@ -8,53 +9,47 @@ import { ModalWindow } from './Modal/Modal.js';
 import { Report } from 'notiflix/build/notiflix-report-aio';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
-export class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    largeImageURL: '',
-    tag: '',
-    isModalOpen: false,
-    loading: false,
-    error: null,
-    loadMore: false,
-  };
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [largeImageURL, setLargeImageURL] = '';
+  const [tag, setTag] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  // const [error, setError] = useState(null);
+  const [loadMore, setLoadMore] = useState(false);
 
-  async componentDidUpdate(_, prevState) {
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
+  useEffect(() => {
+    async function getQuery() {
       try {
-        this.setState({ loading: true });
+        setLoading(true);
+        const searchQuery = setQuery.split('/');
 
-        const searchQuery = this.state.query.split('/');
-
-        const { hits, totalHits } = await getImages(
-          searchQuery[1],
-          this.state.page
-        );
+        const { hits, totalHits } = await getImages(searchQuery[1], page);
         if (hits.length === 0) {
           Report.warning('You enter invalid Input. Try again.');
         }
-        if (this.state.page === 1) {
+        if (page === 1) {
           Notify.success(`Hooray! We found ${totalHits} images.`);
         }
 
-        this.setState(prev => {
+        setImages(prev => prev.images: [...prev.images, ...hits],
+          );
+
+        setLoadMore(prev => {
           return {
-            images: [...prev.images, ...hits],
-            loadMore: this.state.page < Math.ceil(totalHits / 12),
+            loadMore: page < Math.ceil(totalHits / 12),
           };
         });
       } finally {
-        this.setState({ loading: false });
+        setLoading(false);
       }
     }
-  }
+    getQuery();
+  }, [query]);
 
-  onSubmit = e => {
+  const onSubmit = e => {
     e.preventDefault();
 
     const searchQuery = e.target.query.value.toLowerCase().trim('');
@@ -64,54 +59,41 @@ export class App extends Component {
       );
     }
 
-    this.setState({
-      query: `${Date.now()}/${searchQuery}`,
-      page: 1,
-      images: [],
-    });
+    setQuery(`${Date.now()}/${searchQuery}`);
+    setPage(1);
+    setImages([]);
   };
 
-  onLoadMore = () => {
-    this.setState(prev => ({ page: prev.page + 1 }));
+  const onLoadMore = () => {
+    prev => ({ setPage: prev.page + 1 });
   };
 
-  openModal = (largeImageURL, tag) => {
-    this.setState({
-      isModalOpen: true,
-      largeImageURL,
-      tag,
-    });
+  const openModal = () => {
+    setIsModalOpen(true);
+    setLargeImageURL();
+    setTag();
   };
 
-  closeModal = () => {
-    this.setState({
-      isModalOpen: false,
-      largeImageURL: '',
-      tag: '',
-    });
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setLargeImageURL('');
+    setTag('');
   };
 
-  render() {
-    const { images, largeImageURL, tag, isModalOpen, loading, loadMore } =
-      this.state;
-    return (
-      <>
-        <SearchBar onSubmit={this.onSubmit} />
-        {loading && <Loader />}
-        {images.length > 0 && (
-          <ImageGallery
-            gallery={images}
-            onImageClick={this.openModal}
-          ></ImageGallery>
-        )}
-        {loadMore && <Button onClick={this.onLoadMore}>Load more</Button>}
-        <ModalWindow
-          isOpen={isModalOpen}
-          closeModal={this.closeModal}
-          largeImageURL={largeImageURL}
-          tag={tag}
-        />
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <SearchBar onSubmit={onSubmit} />
+      {loading && <Loader />}
+      {images.length > 0 && (
+        <ImageGallery gallery={images} onImageClick={openModal}></ImageGallery>
+      )}
+      {loadMore && <Button onClick={onLoadMore}>Load more</Button>}
+      <ModalWindow
+        isOpen={isModalOpen}
+        closeModal={closeModal}
+        largeImageURL={largeImageURL}
+        tag={tag}
+      />
+    </>
+  );
+};
