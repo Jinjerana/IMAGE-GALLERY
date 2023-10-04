@@ -43,10 +43,6 @@ export const Button = styled.button`
   outline: none;
 `;
 
-// export const SearchFormButtonHover = styled.hover`
-//   opacity: 1;
-// `;
-
 export const Label = styled.div`
   position: absolute;
   width: 1px;
