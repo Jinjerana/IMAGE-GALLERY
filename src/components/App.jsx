@@ -84,6 +84,7 @@ export const App = () => {
     <>
       <SearchBar onSubmit={onSubmit} />
       {loading && <Loader />}
+      {error && !loading && <div>'Error. Try again.'</div>}
       {images.length > 0 && (
         <ImageGallery gallery={images} onImageClick={openModal}></ImageGallery>
       )}
