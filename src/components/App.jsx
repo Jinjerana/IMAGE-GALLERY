@@ -13,18 +13,20 @@ export const App = () => {
   const [images, setImages] = useState([]);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
-  const [largeImageURL, setLargeImageURL] = '';
+  const [largeImageURL, setLargeImageURL] = useState('');
   const [tag, setTag] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  // const [error, setError] = useState(null);
+  const [error, setError] = useState(false);
   const [loadMore, setLoadMore] = useState(false);
 
   useEffect(() => {
+    if (!query) return;
     async function getQuery() {
       try {
         setLoading(true);
-        const searchQuery = setQuery.split('/');
+        setError(false);
+        const searchQuery = query.split('/');
 
         const { hits, totalHits } = await getImages(searchQuery[1], page);
         if (hits.length === 0) {
@@ -34,20 +36,18 @@ export const App = () => {
           Notify.success(`Hooray! We found ${totalHits} images.`);
         }
 
-        setImages(prev => prev.images: [...prev.images, ...hits],
-          );
+        setImages(prev => [...prev, ...hits]);
 
-        setLoadMore(prev => {
-          return {
-            loadMore: page < Math.ceil(totalHits / 12),
-          };
-        });
+        setLoadMore(page < Math.ceil(totalHits / 12));
+      } catch (error) {
+        setError(true);
+        Report.warning('Error. Try again.');
       } finally {
         setLoading(false);
       }
     }
     getQuery();
-  }, [query]);
+  }, [query, page]);
 
   const onSubmit = e => {
     e.preventDefault();
@@ -65,13 +65,13 @@ export const App = () => {
   };
 
   const onLoadMore = () => {
-    prev => ({ setPage: prev.page + 1 });
+    setPage(page + 1);
   };
 
-  const openModal = () => {
+  const openModal = (largeImageURL, tag) => {
     setIsModalOpen(true);
-    setLargeImageURL();
-    setTag();
+    setLargeImageURL(largeImageURL);
+    setTag(tag);
   };
 
   const closeModal = () => {
